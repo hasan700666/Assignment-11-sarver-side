@@ -79,16 +79,69 @@ async function run() {
 
       const { sort } = req.query;
       if (sort === "boost") {
-        console.log("boost");
+        query.boosted = true;
         const cursor = issuesColl.find(query).sort({ boostedAt: -1 });
         const result = await cursor.toArray();
-        return res.send(result);
+        if (result.length > 0) {
+          return res.send(result);
+        } else {
+          return res.send({ message: "no data on bost" });
+        }
       }
       if (sort === "date") {
-        console.log("date");
         const cursor = issuesColl.find(query).sort({ createdAt: -1 });
         const result = await cursor.toArray();
         return res.send(result);
+      }
+      if (sort === "pending") {
+        query.status = "pending";
+        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
+        const result = await cursor.toArray();
+        if (result.length > 0) {
+          return res.send(result);
+        } else {
+          return res.send({ message: "no data on panding" });
+        }
+      }
+      if (sort === "in-progress") {
+        query.status = "in-progress";
+        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
+        const result = await cursor.toArray();
+        if (result.length > 0) {
+          return res.send(result);
+        } else {
+          return res.send({ message: "no data on in-progress" });
+        }
+      }
+      if (sort === "working") {
+        query.status = "working";
+        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
+        const result = await cursor.toArray();
+        if (result.length > 0) {
+          return res.send(result);
+        } else {
+          return res.send({ message: "no data on working" });
+        }
+      }
+      if (sort === "resolved") {
+        query.status = "resolved";
+        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
+        const result = await cursor.toArray();
+        if (result.length > 0) {
+          return res.send(result);
+        } else {
+          return res.send({ message: "no data on resolved" });
+        }
+      }
+      if (sort === "closed") {
+        query.status = "closed";
+        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
+        const result = await cursor.toArray();
+        if (result.length > 0) {
+          return res.send(result);
+        } else {
+          return res.send({ message: "no data on closed" });
+        }
       }
 
       const cursor = issuesColl.find(query);
