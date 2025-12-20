@@ -437,6 +437,8 @@ async function run() {
     app.patch("/user", async (req, res) => {
       const id = req.query.id;
       const Uid = req.query.Uid;
+      const UpdateStaffId = req.query.UpdateStaffId;
+      
       if (id) {
         const query = { _id: new ObjectId(id) };
         const body = req.body;
@@ -458,6 +460,20 @@ async function run() {
             name: body.name,
             photoURL: body.photoURL,
             updateAt: new Date(),
+          },
+        };
+        const option = {};
+        const result = await usersColl.updateOne(query, update, option);
+        return res.send(result);
+      }
+
+      if (UpdateStaffId) {
+        const query = { _id: new ObjectId(UpdateStaffId) };
+        const body = req.body;
+        const update = {
+          $set: {
+            name: body.name,
+            photoURL: body.imgURL,
           },
         };
         const option = {};
