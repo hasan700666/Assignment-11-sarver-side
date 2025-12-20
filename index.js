@@ -437,7 +437,6 @@ async function run() {
     app.patch("/user", async (req, res) => {
       const id = req.query.id;
       const Uid = req.query.Uid;
-
       if (id) {
         const query = { _id: new ObjectId(id) };
         const body = req.body;
@@ -448,7 +447,7 @@ async function run() {
         };
         const option = {};
         const result = await usersColl.updateOne(query, update, option);
-        return result;
+        return res.send(result);
       }
 
       if (Uid) {
@@ -463,7 +462,7 @@ async function run() {
         };
         const option = {};
         const result = await usersColl.updateOne(query, update, option);
-        return result;
+        return res.send(result);
       }
 
       res.send({ message: "not updated" });
@@ -508,6 +507,14 @@ async function run() {
         photoURL,
         name,
       });
+      res.send(result);
+    });
+
+    // id = 12
+    app.delete("/staff_delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await usersColl.deleteOne(query);
       res.send(result);
     });
 
