@@ -347,6 +347,23 @@ async function run() {
         };
       }
 
+      if (body.StafFirebaseUid === null) {
+        update = {
+          $set: {
+            assignedStaffUid: null,
+            assignedStaffName: null,
+          },
+          $addToSet: {
+            timeline: {
+              status: "Rejected",
+              note: "Issue Rejaected For This Staff",
+              by: `Admin`,
+              at: new Date(),
+            },
+          },
+        };
+      }
+
       if (body.IssuesStatus === "in-progress") {
         update = {
           $set: {
