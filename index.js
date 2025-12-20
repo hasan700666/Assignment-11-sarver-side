@@ -192,7 +192,7 @@ async function run() {
           {
             price_data: {
               currency: "USD",
-              unit_amount: 50,
+              unit_amount: paymentInfo.amount,
               product_data: {
                 name: paymentInfo.name,
               },
@@ -205,6 +205,7 @@ async function run() {
         metadata: {
           issuesId: paymentInfo.id,
           firebaseUid: paymentInfo.uid,
+          type: paymentInfo.type,
         },
         success_url: `${process.env.WEBSITE_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.WEBSITE_URL}/payment/failed`,
@@ -229,33 +230,63 @@ async function run() {
           });
         }
         //ai
-        const id = session.metadata.issuesId;
-        const query = { _id: new ObjectId(id) };
-        const update = {
-          $set: {
-            boosted: "true",
-            boostedAt: new Date(),
-            priority: "high",
-          },
-        };
-        const option = {};
-        const result = await issuesColl.updateOne(query, update, option);
-        const paymentData = {
-          firebaseUid: session.metadata.firebaseUid,
-          amount: session.amount_total,
-          type: "boost",
-          issueId: session.metadata.issuesId,
-          provider: "stripe",
-          transactionId: session.payment_intent,
-          createdAt: new Date(),
-        };
-        //ai
-        const result2 = await paymentsColl.insertOne(paymentData);
-        return res.send({
-          issuesCollectionModefid: result,
-          paymentData: result2,
-          transactionId: session.payment_intent,
-        });
+        const type = session.metadata.type;
+
+        if (type === `user subscription`) {
+          console.log("i am in");
+          const email = session.customer_details.email;
+          const query = { email: email };
+          const update = {
+            $set: {
+              isPremium: true,
+            },
+          };
+          const option = {};
+          const result = await usersColl.updateOne(query, update, option);
+
+          const paymentData = {
+            firebaseUid: session.metadata.firebaseUid,
+            amount: session.amount_total,
+            type: session.metadata.type,
+            provider: "stripe",
+            transactionId: session.payment_intent,
+            createdAt: new Date(),
+          };
+          const result2 = await paymentsColl.insertOne(paymentData);
+          return res.send({
+            issuesCollectionModefid: result,
+            paymentData: result2,
+            transactionId: session.payment_intent,
+          });
+        } else {
+          const id = session.metadata.issuesId;
+          const query = { _id: new ObjectId(id) };
+          const update = {
+            $set: {
+              boosted: "true",
+              boostedAt: new Date(),
+              priority: "high",
+            },
+          };
+          const option = {};
+          const result = await issuesColl.updateOne(query, update, option);
+
+          const paymentData = {
+            firebaseUid: session.metadata.firebaseUid,
+            amount: session.amount_total,
+            type: session.metadata.type,
+            issueId: session.metadata.issuesId,
+            provider: "stripe",
+            transactionId: session.payment_intent,
+            createdAt: new Date(),
+          };
+          const result2 = await paymentsColl.insertOne(paymentData);
+          return res.send({
+            issuesCollectionModefid: result,
+            paymentData: result2,
+            transactionId: session.payment_intent,
+          });
+        }
       }
 
       res.send({ success: "Data is not updated" });
