@@ -17,7 +17,6 @@ const stripe = require("stripe")(process.env.STRIP_API_KEY);
 
 //mongodb
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const { data } = require("react-router");
 const uri = `mongodb+srv://${process.env.DB_UserName}:${process.env.DB_Password}@cluster0.wkvhhbf.mongodb.net/?appName=Cluster0`;
 const client = new MongoClient(uri, {
   serverApi: {
@@ -62,90 +61,68 @@ async function run() {
     app.get("/issues", async (req, res) => {
       const query = {};
 
-      const { firebaseId } = req.query;
+      const { firebaseId, id, staffUid, sort, search } = req.query;
+
       if (firebaseId) {
         query.reporterFirebaseUid = firebaseId;
       }
 
-      const { id } = req.query;
       if (id) {
         query._id = new ObjectId(id);
       }
 
-      const { staffUid } = req.query;
       if (staffUid) {
         query.assignedStaffUid = staffUid;
       }
 
-      const { sort } = req.query;
+      if (search) {
+        console.log("serach");
+        console.log(search);
+        query.$or = [
+          { title: { $regex: search, $options: "i" } },
+          { location: { $regex: search, $options: "i" } },
+          { category: { $regex: search, $options: "i" } },
+        ];
+      }
+
+      let sortOptions = { createdAt: -1 };
+
       if (sort === "boost") {
         query.boosted = true;
-        const cursor = issuesColl.find(query).sort({ boostedAt: -1 });
-        const result = await cursor.toArray();
-        if (result.length > 0) {
-          return res.send(result);
-        } else {
-          return res.send({ message: "no data on bost" });
-        }
-      }
-      if (sort === "date") {
-        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
-        const result = await cursor.toArray();
-        return res.send(result);
-      }
-      if (sort === "pending") {
+        sortOptions = { boostedAt: -1 };
+      } else if (sort === "date") {
+        sortOptions = { createdAt: -1 };
+      } else if (sort === "pending") {
         query.status = "pending";
-        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
-        const result = await cursor.toArray();
-        if (result.length > 0) {
-          return res.send(result);
-        } else {
-          return res.send({ message: "no data on panding" });
-        }
-      }
-      if (sort === "in-progress") {
+      } else if (sort === "in-progress") {
         query.status = "in-progress";
-        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
-        const result = await cursor.toArray();
-        if (result.length > 0) {
-          return res.send(result);
-        } else {
-          return res.send({ message: "no data on in-progress" });
-        }
-      }
-      if (sort === "working") {
+      } else if (sort === "working") {
         query.status = "working";
-        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
-        const result = await cursor.toArray();
-        if (result.length > 0) {
-          return res.send(result);
-        } else {
-          return res.send({ message: "no data on working" });
-        }
-      }
-      if (sort === "resolved") {
+      } else if (sort === "resolved") {
         query.status = "resolved";
-        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
-        const result = await cursor.toArray();
-        if (result.length > 0) {
-          return res.send(result);
-        } else {
-          return res.send({ message: "no data on resolved" });
-        }
-      }
-      if (sort === "closed") {
+      } else if (sort === "closed") {
         query.status = "closed";
-        const cursor = issuesColl.find(query).sort({ createdAt: -1 });
-        const result = await cursor.toArray();
-        if (result.length > 0) {
-          return res.send(result);
-        } else {
+      }
+
+      const cursor = issuesColl.find(query).sort(sortOptions);
+      const result = await cursor.toArray();
+
+      if (result.length === 0) {
+        if (sort === "boost") {
+          return res.send({ message: "no data on boost" });
+        } else if (sort === "pending") {
+          return res.send({ message: "no data on pending" });
+        } else if (sort === "in-progress") {
+          return res.send({ message: "no data on in-progress" });
+        } else if (sort === "working") {
+          return res.send({ message: "no data on working" });
+        } else if (sort === "resolved") {
+          return res.send({ message: "no data on resolved" });
+        } else if (sort === "closed") {
           return res.send({ message: "no data on closed" });
         }
       }
 
-      const cursor = issuesColl.find(query);
-      const result = await cursor.toArray();
       res.send(result);
     });
 
@@ -438,7 +415,7 @@ async function run() {
       const id = req.query.id;
       const Uid = req.query.Uid;
       const UpdateStaffId = req.query.UpdateStaffId;
-      
+
       if (id) {
         const query = { _id: new ObjectId(id) };
         const body = req.body;
