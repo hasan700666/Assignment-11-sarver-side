@@ -6,7 +6,11 @@ require("dotenv").config();
 
 // firebase
 const admin = require("firebase-admin");
-const serviceAccount = require("./serviceAccountKey.json");
+// const serviceAccount = require("./serviceAccountKey.json");
+
+
+const decoded = Buffer.from(process.env.FB_SERVICE_KYE, 'base64').toString('utf8')
+const serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -32,6 +36,21 @@ const client = new MongoClient(uri, {
 app.use(express.json());
 
 app.use(cors());
+
+// verify the user
+const verifyFBToken = async (req, res, next) => {
+  const token = req.headers.authorization;
+  if (!token) {
+    return res.status(401).send({ message: "unauthroized assess" });
+  }
+  try {
+    const idToken = token.split(" ")[1];
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    next();
+  } catch (err) {
+    return res.status(401).send({ message: "unauthroized assess" });
+  }
+};
 
 //main code
 async function run() {
@@ -76,8 +95,6 @@ async function run() {
       }
 
       if (search) {
-        console.log("serach");
-        console.log(search);
         query.$or = [
           { title: { $regex: search, $options: "i" } },
           { location: { $regex: search, $options: "i" } },
@@ -88,7 +105,7 @@ async function run() {
       let sortOptions = { createdAt: -1 };
 
       if (sort === "boost") {
-        query.boosted = true;
+        query.boosted = "true";
         sortOptions = { boostedAt: -1 };
       } else if (sort === "date") {
         sortOptions = { createdAt: -1 };
@@ -210,7 +227,6 @@ async function run() {
         const type = session.metadata.type;
 
         if (type === `user subscription`) {
-          console.log("i am in");
           const email = session.customer_details.email;
           const query = { email: email };
           const update = {
@@ -512,12 +528,12 @@ async function run() {
     });
 
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     //await client.close();
